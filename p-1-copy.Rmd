@@ -16,7 +16,14 @@ ds_theme_set()
 
 #install.packages("rmarkdown")
 
-#install.packages("knitr"
+#install.packages("knitr")
+
+#echo = TRUE	Show the R code in the output
+#echo = FALSE	Hide the code but still show results/output
+#message = FALSE	Suppress messages (e.g., from library loading)
+#warning = FALSE	Suppress warnings#eval = FALSE	Don’t run the code (just show it)
+#include = FALSE	Run the code but don’t show code or output
+
 
 
 library(plm)
@@ -123,6 +130,7 @@ R = ols_estimate(y, X)
 
 
 ```
+
 
 
 
