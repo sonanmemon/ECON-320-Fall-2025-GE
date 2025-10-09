@@ -4,6 +4,8 @@ date: "2025-04-12"
 output:  html_document
 ---
 
+## This code is just an example of how to construct a R Markdown file. Some of the code here maybe too advanced for you at this stage. Don't take that seriously.
+
 ```{r setup, include=FALSE}
 library(dslabs)
 library(dplyr)
@@ -131,6 +133,7 @@ R = ols_estimate(y, X)
 
 
 ```
+
 
 
 
