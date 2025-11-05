@@ -1,138 +1,688 @@
 ---
-title: "Assignment 1"
-date: "2025-04-12"
-output:  html_document
+title: "Take-Home-Final-SMEMON"
+date: "2025-06-06"
+output: html_document
 ---
 
-## This code is just an example of how to construct a R Markdown file. Some of the code here maybe too advanced for you at this stage. Don't take that seriously.
 
+  
 ```{r setup, include=FALSE}
+
 library(dslabs)
 library(dplyr)
 library(ggplot2)
+options(stringsAsFactors = FALSE)
 library(tidyverse)
+library(gridExtra)
+library(Lahman)
+library(dslabs)
+library(AER)
+library(tseries)
+library(dynlm)
+library(stargazer)
+library(forecast)
+library(mFilter)
 library(data.table)
 library(caTools)
 library(histogram)
 ds_theme_set()
 
-#install.packages("rmarkdown")
-
-#install.packages("knitr")
-
-#echo = TRUE	Show the R code in the output
-#echo = FALSE	Hide the code but still show results/output
-#message = FALSE	Suppress messages (e.g., from library loading)
-#warning = FALSE	Suppress warnings#eval = FALSE	Don’t run the code (just show it)
-#include = FALSE	Run the code but don’t show code or output
 
 
 
 library(plm)
+library(lfe)
+library(lmtest)
+library(car)
 
 library(knitr)
+library(broom)
+library(gplots)
+library(wooldridge)
 
-knitr::opts_chunk$set(echo = TRUE)
+library(fixest)
+library(dagitty)
+library(ggdag)
+library(ggraph)
+
+
+
+library(tidygraph)
+
+library(modelsummary)
+
+library(topicmodels)
+library(tidytext)
+library(tidytext)
+library(gutenbergr)
+library(stringr)
+library(scales)
+
+#library(mallet)
+
+library(ggplot2)
+
+library(igraph)
+library(ggraph)
+
+library(rdrobust)
+
+library(SentimentAnalysis)
+
+library(haven)
+
+library(kableExtra)
+
+
+
 
 ```
 
 
 
 
-# Question 1:
+# Q1:
 
-## (a)
+The key causal question is the effect of financial aid programs on college enrollment rates and college
+choices, especially among the lower economic strata.
 
-The function below, takes two inputs as required and constructs an OLS estimator. It first concatenates
-a vectors of 1s along with the input X since this function is written for a regression with intercept. Secondly, it verifies the compatibility of dimensions to avoid errors. Lastly, it computes the required
-transpose matrix and inversion exercise to apply OLS formula. The output returned is a set of coefficients including the intercept and other coefficients.
-
-
-
-```{r 1a}
+More specifically, the question is focused on analyzing this impact in the context of Colombia and
+in response to a very specific policy intervention i.e. the SPP during a specific temporal landscape:
+during 2014-2018 which provides financial aid to high-achieving youth for college education, targeted
+at the bottom 50\% of the income distribution and for those who are in the top 10% of a test threshold.
 
 
-ols_estimate <- function(y, X) {
-  X <- cbind(1, X)  # Add intercept
-  if (nrow(X) != length(y)) {
-    stop("The number of rows in X must match the length of y")
-  }
-  beta_hat <- solve(t(X) %*% X) %*% t(X) %*% y
-  return(as.vector(beta_hat))  # Return coefficients as vector
-}
+
+# Q2:
+
+The authors exploit the convenient natural experiment that the SPP scholarship programs were initiated
+at a particular point in time during 2014-2018 and use the first cohort, to rule out the possibility
+of learning more about the system over time and endogenous responses by agents who can increase monetary
+or non-monetary investment on preparation time to meet test threshold in second round when or manipulate wealth data through bureaucratic corruption.
+
+More precisely, they compare effects on enrollment and college choices on first cohort using 
+thresholds for income and test scores used in the SPP program for assigning scholarships. The key idea
+is that students who were slightly above the cut-offs of ability and socioeconomic status are comparable
+and on average almost identical in terms of many variables $X_{i}$ which cannot be controlled
+for due to lack of data. Hence, the RD approach can in principle solve the identification 
+problem, at least in a local neighborhood.
 
 
-```
+# Q3:
+
+Firstly, the qualification in the SPP program is based on an explicit threshold or score on
+tests score which is in the top 10 percent of the test scores; 
+hence those who are in top 9.99% qualify for treatment group and those in the top 10.1 percent do not
+qualify. Another dimension is that students from the bottom 50% of the wealth distribution based
+on common metric on wealth data are hired, again creating a sharp discontinuity between those at the 51st
+percentile of wealth and those at the 49th percentile. If there were perfect compliance, this would be 
+a sharp RDD.
+
+However, there is partial, one sided non-compliance driven by high-quality unviersity deadlines approaching only 2 weeks at the time of assignment into treatment which is creates fuzziness in an otherwise sharp design, ultimately making it a fuzzy design.
 
 
-## (b)
+# Q4:
 
-The code below verifies that the output from lm() function coincides with the output produced by
-my coefficients. In both cases, the values of the three coefficients including an intercept and
-two controls are the same.
+Firstly, for making the case that no evidence on manipulation in assignment to treatments
+near the thresholds exists (i.e. addressing the concern that the threshold was not indeed random since some households may have manipulated evidence on wealth scores or test scores, if they fell
+slightly under the threshold i.e. marginal deviations driven by intention), the following arguments are provided by the author.
 
-
-```{r 1b}
-
-
-# Define the parameters
-beta = matrix(c(3, 3, 3), nrow = 3, ncol = 1)
-# Define the X matrix
-X = matrix(data = rnorm(200), nrow = 100, ncol = 2)
-# Define the disurbance
-u = rnorm(100)
-# Create a column of ones
-ones = matrix(1, nrow = 100, ncol = 1)
-# Define the y matrix
-y = cbind(ones, X) %*% beta + u
-# Run lm
-test_lm = lm(y ~ X)
-summary(test_lm)
-# TODO Now run your function
-
-coefficients <- ols_estimate(y, X)
-print(coefficients)
-
-```
-
-## Question 2 (a):
-
-In this part, I just use the code provided and apply my OLS estimate function to sample generated by
-the sample_df() function. I construct the X matrix by using cbind() first before passing it as an
-input to ols_estimate() function which will also by default, estimate the model with an intercept, leading to total of four variables.
+The test was conducted before the announcement of the SPP program in 2014. Hence, there was no
+endogenous change in preparation intensity or style in anticipation of the program i.e. it was an 
+exogenous or un-anticipated shock since households had no information about the cutoffs or existence 
+of this scholarship program at the time of test scores. In similar style, the socio-economic
+status of households was assigned by public data way before this program was initiated and thus,
+the data on wealth index was not corrupted by the influence of the program. Lastly, the scoring itself
+is based on an algorithm which is unknown to the participants and hence cannot be manipulated.
 
 
-```{r 2a}
+In order to make the case for lack of systematic manipulation or selection bias in the so-called running
+variable, the authors use a statistical argument based on p-value robustness test.
 
 
-# Set a seed
-set.seed(12)
-# Set the number of observations desired
-n = 100
-# Generate the population (starting with the "unobserved" disturbances)
-sample_df = tibble(
-  id = 1:n,
-  u = rnorm(n),
-  v = rnorm(n),
-  w = rnorm(n),
-  epsilon = v + w,
-  x1 = rnorm(n),
-  x2 = rnorm(n),
-  x3 = u + w,
-  y = 0 + 1 * x1 + 2 * x2 + 3 * x3 + epsilon
+Lastly, to make the case that predicted discontinuity around the thresholds is indeed a function of
+the running variables, which is essentially an instrument validity condition, the
+authors report that there is a statistical balance in most covariates on which data is
+available on either side of discontinuity; while there is imbalance with respect to some
+characteristics, the authors argue that this is not economically significant. Statistically speaking, the joint null-hypothesis of balance in covariates cannot be rejected.
+
+
+
+
+# Q5:
+
+Yes, the identification argument relies on the quasi-random assignment of test scores but only
+around the thresholds of eligibility. The same point applies to quasi-random assignment of wealth
+index around the threshold.
+
+By quasi-random assignment, what the authors really mean is that this is not exactly a randomized
+experiment but almost as good as it or second best due to almost random assignment/natural experiment
+but note that this randomness is localized and valid only around the thresholds.
+
+
+# Q6: Explain why 2SLS can be helpful in estimating treatment effects in an RD design.
+
+
+One problem is that in the case of fuzzy regression discontinuity, the treatment is not
+perfectly exogenous, drivien by lack of perfect compliance. For instance, there are
+households who were just above the cut-off and assigned the scholarship but they failed
+to comply either due to lack of willingness but mostly because of narrow time span remaining
+for application deadlines. Hence, we need to take an instrumental variable approach.
+
+The first stage regression here can be represented by the following equation, where $\beta_{1}$ 
+is expected to be strongly positive when rate of non-compliance is low. When rate of non-compliance
+is zero, then the two stage procedure is not needed to perfect correlation around the local range
+of treatment versus control.
+
+$Treatment_{i} = \beta_{0} + \beta_{1} Cutoff_{i} + X_{i} + \epsilon_{i}$
+
+
+After the second stage estimation or reduced form is estimated, we get a causal, local average treatment effects.
+
+
+
+
+
+# Q7: Explain what the two running variables are and how each variable creates a discontinuity.
+
+One of the running variables is test score; those in the top 10% of the score qualify; but this is
+only necessary but not sufficient condition. 
+
+Secondly, the wealth index, a measure of socio-economic status has to be below a certain cutoff: only households in the bottom 50% of the threshold qualify; once again this is a necessary but not sufficient condition since those students who are in the bottom 50% of wealth but fail to satisfy score cutoff also do not qualify.
+
+
+
+
+# Q8: Why would someone want two running variables in an RD design?
   
+
+There can be other motivations such as the statistical power created by multiple instruments or over-identifying restrictions when two are available for one endogenous variable. 
+
+In other cases, the application demands two cutoffs to be met in the RD design for results to be met. For instance, the natural experiment under consideration has two or more than two requirements to be
+fulfilled for treatment. In such cases, either multiple cut-off variables can be used in the first stage or two separate first stage effects can be estimated by conditioning the sample to force comparison 
+with one of the non-estimated effects.
+
+In this case, the treatment and control groups were designed based on two running
+variables; both the wealth cutoff and test score cutoffs have to be met for assignment into
+treatment. For instance with a test score above the top 10% threshold but wealth cutoff above
+bottom 50% of the population, scholarship eligibility is not satisfied. Hence, while there are other
+motivations for including multiple running variables in RD design, in this case, the treatment
+itself is based on a multidimensional indicator.
+
+
+
+# Q9: 09 (0 pts) Load the data.
+
+Done below.
+
+
+
+
+# Q10:
+
+First-stage refers to the relationship between the running variable (around the cutoff) and the treatment assignment which is represented in Figure 3 of the paper. 
+
+There are two things to note here; firstly there are two different threshold criteria in this framework; socioeconomic status in the bottom 50% threshold or below and secondly, test scores in the top 10% or above; only when both are met is the treatment possible. The second issue is that there is non-compliance, so the probability of treatment is not one even when both criteria are met.
+
+As a consequence, when plotting the take-up rate as a function of test scores, the authors keep
+socioeconomic status fixed at or below 50% threshold to ensure eligibility with respect to SES. Similarly, while plotting the take-up rate as a test score as a function of SES, the sample is
+trimmed or restricted to include people who SABER eligible students or those who satisfy the test score 
+threshold. This allows focus on the conditional increase in probability of treatment, keeping one of the
+criteria for treatment fixed. 
+
+Technically it is a conditional local average treatment effects and there 
+are hence two different LATE effects estimated.
+
+
+
+
+The first stage figure in the paper is Figure 3. The need for estimating this
+arises due to lack of perfect compliance in treatment due to narrow time frame between treatment
+allocation and university application deadlines (two weeks in many cases). In other words even when
+treatment is received not 100% of the treated individuals actually got to universities.
+
+The code below reproduces two sub-figures, corresponding to figure 3 for when sample is restricted to SISBEN-eligible individuals and similarly the second for sample restricted to SABER-11 cutoffs being
+met.
+
+
+
+
+
+```{r title2}
+
+cutoff <- 0
+
+data <- read_dta("data_RD.dta")
+
+
+# Restrict sample and define treatment
+
+data_sisbenmet <- subset(data, running_sisben >= cutoff)
+
+# Subset data to distance between -40 and 40 to be consistent with Figures in Paper:
+
+data_sub <- subset(data_sisbenmet, running_saber11 >= -40 & running_saber11 <= 40)
+
+
+
+rdplot(y = data_sub$beneficiary_spp, 
+         x = data_sub$running_saber11, 
+         c = 0,
+         p = 1, 
+         x.label = "Distance From Test Score Cutoff",
+         y.label = "Probability of Receiving Aid",
+         title = paste("First-Stage RD Plot:"))
+
+
+
+ data_sabermet <- subset(data, running_saber11 >= cutoff)
+
+
+
+
+# Subset data to distance between -40 and 40:
+
+data_sub <- subset(data_sabermet, running_sisben >= -20 & running_sisben <= 20)
+
+
+rdplot(y = data_sub$beneficiary_spp, 
+         x = data_sub$running_sisben, 
+         c = 0,
+         p = 1, 
+         x.label = "Distance From Wealth Cutoff",
+         y.label = "Probability of Receiving Aid",
+         title = paste("First-Stage RD Plot:"))
+
+
+
+
+```
+
+
+
+
+
+# Q11: The authors only discuss compliers and never-takers in the paper. How/why are they able to rule out always-takers and defiers?
+
+Always-takers in this context would mean people who would enroll in schools, specially best schools (since the authors report stronger results for high-quality schools) regardless of the treatment. While always-takers can exist in the upper echelons of society but the focus of the study and even the local average treatment effect is in the neighborhood around the bottom 50% wealth threshold which makes it unlikely. In any case, the authors actually verify that always takers are 0\% in the data and hence, there is no need to speculate about them.
+
+Meanwhile, defiers are agents who always go against the treatment or assignment; they pursue
+enrollment in schools only when they are not offered a scholarship; hence when they qualify and 
+are offered a scholarship, this subset perhaps motivated by the social stigma associated with
+revealing lack of ability to pay for tuition might not accept need based scholarship. However, this is highly unlikely in this application since the scholarship is both need and merit-based; the social
+stigma is likely to be lower or negligible.
+
+If defiers exist, then treatment effects for some agents are negative and for others it is positive, which can bias the results downwards, if true effects are positive. In this case, the monotonicity property would be violated. Even the IV-based estimates for average treatment effect for compliers and will be biased.
+
+The authors discuss always-takers but do not address defiers to the best of my knowledge; I suppose the implicit assumption is that such people do not exist or if they do, they are unlikely to bias the results significantly in the context of this application.
+
+
+# Q12:
+
+I have used three box-plots due to binary nature of variables for variables: age, ethnic minority status and mother's primary education level dummy. For age, I have also plotted the age distribution since that is a continuous variable, demonstrating that the variance of age reduces after the cut-off is met, indicating that extreme ages are under-represented in the top 10% of scores; however, at the median the age is similar across treated and untreated groups.
+
+The data used for plotting distributions across the treated and un-treated groups is restricted to
+groups which qualify based on wealth index i.e. below the 50% threshold for wealth to focus on
+changes in treatment for meeting test cutoff.
+
+
+
+Notice that while some individual covariates are unbalanced across the two groups; for instance the table below demonstrates that for the group above the cutoff, mothers with primary education has lower proportion; 40% versus 20%, indicating a channel between mother's education level and treatment.
+Meanwhile, mean age of students has no meaningful difference, before and after the cutoff.  The results demonstrate that on the whole, covariates are balanced and there is little evidence of systematic sorting into treated and controlled groups, at least at the aggregate level, across all variables since the authors reject the joint hypothesis based on a F-test with 25 covariates.  
+
+
+On the whole, set of covariates is not jointly significant as reported by the authors, supporting the interpretation of causal effect driven by test-score threshold for education access.
+
+
+
+
+```{r title3}
+
+data <- read_dta("data_RD.dta")
+
+
+
+
+
+
+cutoff <- 0
+
+# Restrict sample and define treatment
+data_filtered <- subset(data, running_sisben >= cutoff)
+
+
+
+data_filtered$treatment_group <- ifelse(data_filtered$running_saber11 >= cutoff, 
+                                        "Above Cutoff", "Below Cutoff")
+
+
+
+# Age, Ethnic Minority and Mother's Primary Education Level are Chosen
+
+
+ggplot(data_filtered, aes(x = running_saber11, y = icfes_age)) +
+  geom_point(alpha = 0.4) +
+  geom_vline(xintercept = cutoff, color = "red", linetype = "solid") +
+  labs(title = "Covariate Balance: Age vs. Test Score Cutoff",
+       x = "Test Score Cuttoff",
+       y = "Age of Student") +
+  theme_minimal()
+
+
+mean_age <- data_filtered %>%
+  filter(!is.na(icfes_age), !is.na(treatment_group)) %>%  # remove NAs here
+  group_by(treatment_group) %>%
+  summarise(age_mean = mean(icfes_age), n = n())
+
+ggplot(mean_age, aes(x = treatment_group, y = age_mean, fill = treatment_group)) +
+  geom_col(alpha = 0.7) +
+  scale_fill_manual(values = c("Below Cutoff" = "skyblue", "Above Cutoff" = "orange")) +
+  scale_y_continuous(breaks = seq(0, 25, by = 3), limits = c(0, 25)) +
+  labs(title = "Mean Age Before and After Cutoff",
+       x = "Group",
+       y = "Mean Age",
+       fill = "Group") +
+  theme_minimal()
+
+
+
+
+
+
+
+
+# Calculate mean ethnic minority status by treatment
+
+data_filtered$treatment_group <- ifelse(data_filtered$running_saber11 >= cutoff, "Above Cutoff", "Below Cutoff")
+
+
+
+
+prop_urm <- data_filtered %>%
+  filter(!is.na(icfes_urm), !is.na(treatment_group)) %>%  # remove NAs here
+  group_by(treatment_group) %>%
+  summarise(prop = mean(icfes_urm), n = n())
+
+ggplot(prop_urm, aes(x = treatment_group, y = prop, fill = treatment_group)) +
+  geom_col(alpha = 0.7) +
+  scale_fill_manual(values = c("Below Cutoff" = "skyblue", "Above Cutoff" = "orange")) +
+  scale_y_continuous(breaks = seq(0, 0.15, by = 0.02), limits = c(0, 0.15)) +
+  labs(title = "Proportion of Ethnic Minority Before and After Cutoff",
+       x = "Group",
+       y = "Proportion of Ethnic Minority (icfes_urm = 1)",
+       fill = "Group") +
+  theme_minimal()
+
+
+# Calculate mean ethnic minority status by treatment
+
+
+prop_me1 <- data_filtered %>%
+  filter(!is.na(icfes_educm1), !is.na(treatment_group)) %>%  # remove NAs here
+  group_by(treatment_group) %>%
+  summarise(prop = mean(icfes_educm1), n = n())
+
+ggplot(prop_me1, aes(x = treatment_group, y = prop, fill = treatment_group)) +
+  geom_col(alpha = 0.7) +
+  scale_fill_manual(values = c("Below Cutoff" = "skyblue", "Above Cutoff" = "orange")) +
+  labs(title = "Proportion of Students With Primary Education",
+       x = "Group",
+       y = "Proportion With Mother Having Primary Education",
+       fill = "Group") +
+  theme_minimal()
+
+
+
+
+
+
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+# Q13 (10 pts) Plot the reduced-form figures with respect to the two running variables:
+
+Done below. This is replication of the Figure 4 in R code provided below.
+
+
+
+
+```{r title4}
+
+cutoff <- 0
+
+# Restrict sample and define treatment
+
+data_sisbenmet <- subset(data, running_sisben >= cutoff)
+
+
+
+# Plot: RD; replication of Figure 4; Reduced Form.
+
+
+
+# Subset data to distance between -40 and 40 to be consistent with Figures in Paper:
+
+data_sub <- subset(data_sisbenmet, running_saber11 >= -40 & running_saber11 <= 40)
+
+rdrobust(y = data_sisbenmet$spadies_any, x = data_sisbenmet$running_saber11)
+
+rdplot(y = data_sub$spadies_any, 
+       x = data_sub$running_saber11, 
+       c = 0,
+       p = 1,  # sets linear polynomial fit on each side
+       x.label = "Distance to Cutoff", 
+       y.label = "Probability of Enrollment",
+       title = "Sample Restricted To Wealth Index Cut Off Met")
+
+
+data_sabermet <- subset(data, running_saber11 >= cutoff)
+
+
+
+# Subset data to distance between -40 and 40:
+
+data_sub <- subset(data_sabermet, running_sisben >= -20 & running_sisben <= 20)
+
+
+rdrobust(y = data_sabermet$spadies_any, x = data_sabermet$running_sisben)
+
+
+rdplot(y = data_sub$spadies_any, 
+       x = data_sub$running_sisben, 
+       c = 0,
+       p = 1,  # sets linear polynomial fit on each side
+       x.label = "Distance to Cutoff", 
+       y.label = "Probability of Enrollment",
+       title = "Sample Restricted To Test Score Cutoff Met")
+
+
+
+
+```
+
+
+# Q14 Estimate the reduced-form and first-stage regressions implied by the figures in 10 and 13. Report the results in a table. Briefly discuss whether your regression results match the figures.
+
+The code for estimating first-stage and second-stage regression is given below. Yes, the estimates are consistent with the results in tables above. For instance, conditional on wealth index, the effect of test score cutoff is to increase likelihood of enrollment by 32.3% and significant, consistent with the paper and the table above which show this magnitude of discontinuity.
+
+
+Similarly, the estimates, conditional on score at or above the cutoff, show the marginal impact of
+wealth cutoff being met which is approximately 26.9%, consistent with the paper and figure, where we have a close to 27% increase in enrollment at the cutoff of wealth.
+
+
+
+
+
+```{r title5}
+
+cutoff <- 0
+
+# Restrict sample and define treatment
+
+data_sisbenmet <- subset(data, running_sisben >= cutoff)
+
+
+# First-stage RD regression (treatment ~ running variable; conditional on sisben cutoff met)
+
+
+first_stage <- rdrobust(y = data_sisbenmet$beneficiary_spp, x = data_sisbenmet$running_saber11)
+
+# Reduced-form RD regression (outcome ~ running variable)
+
+reduced_form <- rdrobust(y = data_sisbenmet$spadies_any, x = data_sisbenmet$running_saber11)
+
+fs_est <- first_stage$coef[1]
+fs_se <- first_stage$se[1]
+fs_ci_l <- first_stage$ci[1, 1]
+fs_ci_u <- first_stage$ci[1, 2]
+
+rf_est <- reduced_form$coef[1]
+rf_se <- reduced_form$se[1]
+rf_ci_l <- reduced_form$ci[1, 1]
+rf_ci_u <- reduced_form$ci[1, 2]
+
+rd_results <- data.frame(
+  Model = c("First Stage", "Reduced Form"),
+  Estimate = c(fs_est, rf_est),
+  Std_Error = c(fs_se, rf_se),
+  CI_Lower = c(fs_ci_l, rf_ci_l),
+  CI_Upper = c(fs_ci_u, rf_ci_u)
 )
 
-X = cbind(sample_df$x1, sample_df$x2, sample_df$x3)
+kable(rd_results, digits = 3, 
+      caption = "RD Estimates: Conditional On Wealth Below 50th Percentile", 
+      align = "lccrr", escape = FALSE) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "condensed"), 
+    full_width = FALSE, 
+    position = "center", 
+    font_size = 13
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#f2f2f2") %>%
+  column_spec(1:ncol(rd_results), extra_css = "padding: 4px;") %>%
+  column_spec(4, width = "80px") %>%
+  column_spec(5, width = "80px") %>%
+  footnote(general = "Note: Estimates are from local polynomial regression; Running Variable is Test Scores.")
+
+
+data_sabermet <- subset(data, running_saber11 >= cutoff)
+
+ 
+# First-stage RD regression (treatment ~ running variable; conditional on saber11 cutoff met)
+
+
+first_stage <- rdrobust(y = data_sabermet$beneficiary_spp, x = data_sabermet$running_sisben)
 
 
 
-# Now run your function
-R = ols_estimate(y, X)
+# Reduced-form RD regression
+
+reduced_form <- rdrobust(y = data_sabermet$spadies_any, x = data_sabermet$running_sisben)
 
 
+# Extract key estimates
+fs_est <- first_stage$coef[1]
+fs_se <- first_stage$se[1]
+fs_ci_l <- first_stage$ci[1, 1]
+fs_ci_u <- first_stage$ci[1, 2]
+
+rf_est <- reduced_form$coef[1]
+rf_se <- reduced_form$se[1]
+rf_ci_l <- reduced_form$ci[1, 1]
+rf_ci_u <- reduced_form$ci[1, 2]
+
+rd_results <- data.frame(
+  Model = c("First Stage", "Reduced Form"),
+  Estimate = c(fs_est, rf_est),
+  Std_Error = c(fs_se, rf_se),
+  CI_Lower = c(fs_ci_l, rf_ci_l),
+  CI_Upper = c(fs_ci_u, rf_ci_u)
+)
+
+
+kable(rd_results, digits = 3, caption = "RD Estimates: Conditional On Test Score Met", align = "lccrr", escape = FALSE) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "condensed"), 
+    full_width = FALSE, 
+    position = "center", 
+    font_size = 13
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#f2f2f2") %>%
+  column_spec(1:ncol(rd_results), extra_css = "padding: 4px;") %>%
+  column_spec(4, width = "80px") %>%
+  column_spec(5, width = "80px") %>%
+  footnote(general = "Note: Estimates are from local polynomial regression; Running Variable: Wealth Index")
 
 ```
+
+
+
+
+# Q15 To whom would the LATE be local in this paper? Explain your answer.
+
+
+
+In this context, the LATE is local to individuals whose SISBEN (socioeconomic status) score,
+measured by the wealth index is near the cutoff, and would receive aid only if they fall just below the cutoff, conditional on test scores.
+
+In similar manner, the LATE estimated by the other specification, conditioning on socio-economic status,
+the LATE is local to individuals whose test score is near the cutoff since the aid is received only if the individual is above the cutoff of top decile or top 10% of test scores.
+
+
+Due to the nature of estimation and existence of two running variables, each of the two different
+reduced forms is estimating a marginal effect or LATE, conditional on the cutoff being met for the
+other variable, fixed at the level where cutoffs. Thus, there are two different local average treatment
+effects estimated here due to two treatment requirements.
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
